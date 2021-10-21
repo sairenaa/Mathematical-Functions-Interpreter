@@ -1,0 +1,146 @@
+%{
+
+  #include <iostream>
+  #include <string>
+  #include <cstdlib>
+  #include <vector>
+  #include <map>
+  
+  #include "function.hpp"
+
+  using namespace std;
+
+  void yyerror(string s){
+    cerr << s << endl;
+    exit(EXIT_FAILURE);
+}
+
+  int yylex();
+
+  map<char, Function*> table;
+ 
+%}
+
+%union{
+  char c;
+  Expression *e;
+  double d;
+  vector<char> *v;
+  vector<double> *v1;
+ }
+
+%left '+' '-'
+%left '*' '/'
+
+%type <e> E
+%type <v> Arguments
+%type <v1> Numbers
+
+%token function_token sin_token cos_token
+%token <c> func_name_token var_token
+%token <d> num_token
+
+%%
+Program: Program Naredba '\n'
+| Naredba '\n'
+;
+
+Naredba: function_token func_name_token '(' Arguments ')' '=' '"' E '"' {
+  Function* f = new Function(*$4, $8);
+  if(f->check() == false){
+    cout << "Incorrectly defined function" << endl;
+    delete f;
+  }
+  else{
+    table[$2] = f;
+  }
+  delete $4;
+ }
+| func_name_token {
+  map<char, Function*>::iterator i = table.find($1);
+  if(i == table.end())
+    cout << "Function is not defined" << endl;
+  else
+    i->second->print();
+  }
+| func_name_token '[' Numbers ']' {
+  map<char, Function*>::iterator i = table.find($1);
+  if(i == table.end())
+    cout << "Function is not defined" << endl;
+  else {
+    try {
+      cout << i->second->value(*$3) << endl;
+    }
+    catch(const char *s) {
+      cout << s << endl;
+    }
+  }
+  delete $3;
+  }
+| func_name_token '\'' var_token {
+  map<char, Function*>::iterator i = table.find($1);
+  if(i == table.end())
+    cout << "Function is not defined" << endl;
+  else {
+    i->second->derivative($3)->print();
+    cout << endl;
+  }
+  }
+;
+
+Numbers: Numbers ',' num_token {
+  $$ = $1;
+  $$->push_back($3);
+ }
+| num_token {
+  $$ = new vector<double>();
+  $$->push_back($1);
+ }
+;
+
+Arguments: Arguments ',' var_token {
+  $$ = $1;
+  $$->push_back($3);
+ }
+| var_token {
+  $$ = new vector<char>();
+  $$->push_back($1);
+ }
+;
+
+E: E '+' E {
+  $$ = new Addition($1, $3);
+ }
+| E '-' E {
+  $$ = new Subtraction($1, $3);
+ }
+| E '*' E {
+  $$ = new Multiplication($1, $3);
+ }
+| E '/' E {
+  $$ = new Division($1, $3);
+ }
+| '(' E ')' {
+  $$ = $2;
+ }
+| sin_token '(' E ')' {
+  $$ = new Sin($3);
+ }
+| cos_token '(' E ')' {
+  $$ = new Cos($3);
+ }
+| num_token {
+  $$ = new Constant($1);
+ }
+| var_token {
+  $$ = new Variable($1);
+}
+;
+
+
+
+%%
+int main(){
+    yyparse();
+    return 0;
+}
