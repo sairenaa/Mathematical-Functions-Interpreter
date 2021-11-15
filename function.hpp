@@ -1,5 +1,5 @@
-#ifndef __FUNCTION_HPP
-#define __FUNCTION_HPP 1
+#ifndef __FUNCTION_HPP__
+#define __FUNCTION_HPP__ 1
 
 #include <vector>
 #include <map>
