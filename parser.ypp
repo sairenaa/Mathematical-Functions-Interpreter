@@ -41,11 +41,11 @@
 %token <d> num_token
 
 %%
-Program: Program Command '\n'
-| Command '\n'
+Program: Program Statement '\n'
+| Statement '\n'
 ;
 
-Command: function_token func_name_token '(' Arguments ')' '=' '"' E '"' {
+Statement: function_token func_name_token '(' Arguments ')' '=' '"' E '"' {
   Function* f = new Function(*$4, $8);
   if(f->check() == false){
     cout << "Incorrectly defined function" << endl;
